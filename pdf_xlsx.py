@@ -107,7 +107,6 @@ def gs_compress(pdf_final):
             '-dPDFSETTINGS=/ebook',
             '-dEmbedAllFonts=true',
             '-dSubsetFonts=true',
-            '-dSimulateOverprint=true',
             '-sColorConversionStrategy=CMYK',
             '-sDEVICE=pdfwrite',
             '-dColorImageDownsampleType=/Bicubic',
@@ -135,6 +134,51 @@ def gs_compress(pdf_final):
     print(f"Arquivo pdf compactado: {output_file_name}")
 
 
+def process_xls_pdf(xls_file, pdf_file):
+    xls_file_path = os.path.dirname(xls_file)
+
+    xls_file_pdf, cod_fatura = xls_to_pdf(xls_file)
+
+    pdf_join_files(xls_file_pdf, pdf_file)
+
+
+def xls_to_pdf(xls_file):
+    regex = re.compile(r'\d{5,15}')
+    xls_file_name = os.path.basename(xls_file)
+    xls_file_path = os.path.dirname(xls_file)
+
+    cod_fatura = regex.findall(xls_file_name)[0]
+
+    xls_new_pdf_name = "1." + xls_file_name.replace(".xlsx", ".xlsx.pdf")
+
+    print(f"Convertendo {xls_file} para {xls_new_pdf_name}")
+    xlsx_pdf(xls_file, os.path.join(xls_file_path, xls_new_pdf_name))
+
+    return os.path.join(xls_file_path, xls_new_pdf_name), cod_fatura
+
+
+def pdf_join_files(pdf1, pdf2):
+
+    pdf_to_join =[]
+    pdf_to_join.append(pdf1)
+    pdf_to_join.append(pdf2)
+
+    pdf_path = os.path.dirname(pdf1)
+    pdf_final_name = pdf2.replace(".pdf", ".joined.pdf")
+    pdf_final_out = os.path.join(pdf_path, pdf_final_name)
+
+    pdf_join(pdf_to_join, pdf_final_out)
+
+    try:
+        gs_compress(pdf_final_out)
+
+        # clean up
+        delete_file(pdf1)
+
+        delete_file(pdf_final_out)
+    except Exception as err:
+        print(err)
+
 
 if __name__ == '__main__':
 
@@ -160,46 +204,26 @@ if __name__ == '__main__':
         xlsx_files = glob.glob(fpath + "\\*.xlsx")
         pdf_files = glob.glob(fpath + "\\*.pdf")
 
-    regex = re.compile(r'\d{5,15}')
-
     print(f"Using folder: {fpath}")
 
     pdf_to_join = []
 
     for xls_file in xlsx_files:
 
-        xls_file_name = os.path.basename(xls_file)
-        cod_fatura = regex.findall(xls_file_name)[0]
+        xls_new_pdf_name, cod_fatura = xls_to_pdf(xls_file)
+
         pdf_files = glob.glob(fpath + f"\\*{cod_fatura}*.pdf")
 
         if not pdf_files:
-            print(f"Sem pdf da conta correspondente para fatura {cod_fatura}")
-            continue
+            # print(f"Sem pdf da conta correspondente para fatura {cod_fatura}")
+            raise TypeError(f"Sem pdf da conta correspondente para fatura {cod_fatura}")
 
         if len(pdf_files) > 1:
-            print(f"Mais de um arquivo PDF com o codigo da fatura, deixe apenas so um na pasta: {cod_fatura}")
-            sys.exit(-1)
+            raise TypeError(f"Mais de um arquivo PDF com o codigo da fatura, deixe apenas so um na pasta: {cod_fatura}")
 
-        xls_new_pdf_name = "1." + xls_file_name.replace(".xlsx", ".xlsx.pdf")
+        xls_new_pdf_name = os.path.join(fpath, xls_new_pdf_name)
 
-        print(f"Convertendo {xls_file} para {xls_new_pdf_name}")
-        xlsx_pdf(xls_file, os.path.join(fpath, xls_new_pdf_name))
-
-        pdf_to_join.append(os.path.join(fpath, xls_new_pdf_name))
-        pdf_to_join.append(pdf_files[0])
-
-        pdf_final = os.path.join(fpath, f"{cod_fatura}.out.pdf")
-        pdf_join(pdf_to_join, pdf_final)
-        pdf_to_join = []
-
-        gs_compress(pdf_final)
-
-        #pdf_compress(pdf_final)
-
-        delete_file(os.path.join(fpath, xls_new_pdf_name))
-
-        delete_file(os.path.join(fpath, f"{cod_fatura}.out.pdf"))
-
+        pdf_join_files(xls_new_pdf_name, pdf_files[0])
 
 
 
