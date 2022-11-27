@@ -4,26 +4,26 @@ import time
 import wx
 from ObjectListView import ObjectListView, ColumnDefn
 from pdf_xlsx import process_xls_pdf
-########################################################################
+
+
 class MyFileDropTarget(wx.FileDropTarget):
     """"""
-    #----------------------------------------------------------------------
     def __init__(self, window):
         """Constructor"""
         wx.FileDropTarget.__init__(self)
         self.window = window
 
-    #----------------------------------------------------------------------
     def OnDropFiles(self, x, y, filenames):
         """
         When files are dropped, update the display
         """
         self.window.updateDisplay(filenames)
         return True
-########################################################################
+
+
 class FileInfo(object):
     """"""
-    #----------------------------------------------------------------------
+
     def __init__(self, path, date_created, date_modified, size):
         """Constructor"""
         self.name = os.path.basename(path)
@@ -36,7 +36,6 @@ class FileInfo(object):
 
 class MainPanel(wx.Panel):
     """"""
-    #----------------------------------------------------------------------
     def __init__(self, parent):
         """Constructor"""
         wx.Panel.__init__(self, parent=parent)
@@ -97,7 +96,6 @@ class MainPanel(wx.Panel):
 
         self.olv.SetObjects(self.file_list)
 
-    #----------------------------------------------------------------------
     def setFiles(self):
         """"""
         self.olv.SetColumns([

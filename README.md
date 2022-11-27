@@ -11,6 +11,13 @@ pdf-xlsx.py -f C:\my_files
 1. Look for xlsx file 
 2. Convert it to PDF
 3. Join this new PDF with other in folder.
+4. Compress using ghostscript
 
-There are many things to get this better:
-- Get all xlsx in folder and iterate, merging all.
+## Create the exe
+
+```b
+pyinstaller xls2pdf.py --onefile --noconsole
+```
+The exe will be in the dist folder.
+
+ps: If windows or anti-virus flags the exe as malware, remove the --onefile
