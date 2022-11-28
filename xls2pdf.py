@@ -1,9 +1,88 @@
 import os
 import stat
 import time
+import math
 import wx
+import random
 from ObjectListView import ObjectListView, ColumnDefn
 from pdf_xlsx import process_xls_pdf
+import wx.lib.scrolledpanel as scrolled
+
+
+class MyForm(wx.Frame):
+    # demo de fontes
+    def __init__(self):
+        wx.Frame.__init__(self, None, wx.ID_ANY, "Font Tutorial")
+
+        # Add a panel so it looks the correct on all platforms
+        panel = scrolled.ScrolledPanel(self)
+        panel.SetAutoLayout(1)
+        panel.SetupScrolling()
+
+        fontSizer = wx.BoxSizer(wx.VERTICAL)
+        families = {"FONTFAMILY_DECORATIVE":wx.FONTFAMILY_DECORATIVE, # A decorative font
+                    "FONTFAMILY_DEFAULT":wx.FONTFAMILY_DEFAULT,
+                    "FONTFAMILY_MODERN":wx.FONTFAMILY_MODERN,     # Usually a fixed pitch font
+                    "FONTFAMILY_ROMAN":wx.FONTFAMILY_ROMAN,      # A formal, serif font
+                    "FONTFAMILY_SCRIPT":wx.FONTFAMILY_SCRIPT,     # A handwriting font
+                    "FONTFAMILY_SWISS":wx.FONTFAMILY_SWISS,      # A sans-serif font
+                    "FONTFAMILY_TELETYPE":wx.FONTFAMILY_TELETYPE    # A teletype font
+                    }
+        weights = {"FONTWEIGHT_BOLD":wx.FONTWEIGHT_BOLD,
+                   "FONTWEIGHT_LIGHT":wx.FONTWEIGHT_LIGHT,
+                   "FONTWEIGHT_NORMAL":wx.FONTWEIGHT_NORMAL
+                   }
+
+        styles = {"FONTSTYLE_ITALIC":wx.FONTSTYLE_ITALIC,
+                  "FONTSTYLE_NORMAL":wx.FONTSTYLE_NORMAL,
+                  "FONTSTYLE_SLANT":wx.FONTSTYLE_SLANT
+                  }
+        sizes = [8, 10, 12, 14]
+        for family in families.keys():
+            for weight in weights.keys():
+                for style in styles.keys():
+                    label = "%s    %s    %s" % (family, weight, style)
+                    size = random.choice(sizes)
+                    font = wx.Font(size, families[family], styles[style],
+                                   weights[weight])
+                    txt = wx.StaticText(panel, label=label)
+                    txt.SetFont(font)
+                    fontSizer.Add(txt, 0, wx.ALL, 5)
+        panel.SetSizer(fontSizer)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(panel, 1, wx.EXPAND)
+        self.SetSizer(sizer)
+
+
+class TimedDialog(wx.Dialog):
+    def __init__(self, title, message, *args, **kwargs):
+        super(TimedDialog, self).__init__(None, *args,  style=wx.OK | wx.ICON_ERROR | wx.STAY_ON_TOP,
+                                          pos=(0,100), **kwargs)
+
+        self.SetSize((400, 100))
+        self.SetTitle(title)
+        self.Centre()
+
+        font = wx.Font(14, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        text = wx.StaticText(self, -1, size=(448, -1), label=message, style=(wx.ALIGN_CENTRE_HORIZONTAL | wx.TE_MULTILINE ))
+        text.SetFont(font)
+        text.Wrap(448)
+        box = wx.BoxSizer(wx.HORIZONTAL)
+        box.Add(text, 1,  wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 15)
+
+        self.SetSizer(box)
+        self.Layout()
+        self.Refresh()
+
+        # Center form
+        self.Center()
+        self.timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.OnTimer)
+
+        self.timer.Start(3000)  # 2 second interval
+
+    def OnTimer(self, event):
+        self.Close()
 
 
 class MyFileDropTarget(wx.FileDropTarget):
@@ -57,10 +136,16 @@ class MainPanel(wx.Panel):
         sizer.Add(self.addbutton, 0, wx.ALL|wx.CENTER, 5)
 
     def on_toggle_plotlist(self, event):
-        print("Click!")
+
+        dlg = TimedDialog("Aviso", "teste de mensagem")
+        dlg.ShowModal()
+
         count = self.olv.GetItemCount()
         xls_file = ""
-        pdf_file = ""
+        pdf_file = []
+
+        if count == 0:
+            return
 
         for row in range(count):
             item = self.olv.GetItem(row, col=0)
@@ -69,12 +154,16 @@ class MainPanel(wx.Panel):
             if ".xlsx" in item.GetText():
                 xls_file = item.GetText()
             if ".pdf" in item.GetText():
-                pdf_file = item.GetText()
+                pdf_file.append(item.GetText())
 
-        process_xls_pdf(xls_file, pdf_file)
+        if len(pdf_file) > 1:
+            # xlsx ja esta em pdf, basta unir e comprimir
+            process_xls_pdf(xls_file[0], pdf_file[1])
+        else:
+            process_xls_pdf(xls_file, pdf_file[0])
 
-    def onclick(self, event):
-        print("yay it works")
+        dlg = TimedDialog(self, message="teste")
+        dlg.ShowModal()
 
     def updateDisplay(self, file_list):
         """"""
@@ -113,6 +202,7 @@ class MainFrame(wx.Frame):
         """Constructor"""
         wx.Frame.__init__(self, None, title="XLS PDF Join", size=(650, 400))
         panel = MainPanel(self)
+        self.Center()
         self.Show()
 
 

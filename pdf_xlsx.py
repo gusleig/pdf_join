@@ -12,6 +12,14 @@ ROOT_DIR = os.path.abspath(os.curdir)
 PDF_FOLDER = ROOT_DIR + r"\PDF"
 
 
+def pandas_excel_pdf(xlsx="H:\\My Drive\\Clientes\\Braskem\\Link de dados\\Algar\\FRS 100019946499.xlsx"):
+
+    import openpyxl
+    spreadsheet = openpyxl.load_workbook(xlsx)
+    worksheet = spreadsheet.active
+    print("test")
+
+
 def xlsx_pdf(xlsx, pdf_output):
     excel = win32com.client.Dispatch("Excel.Application")
     excel.Visible = False
@@ -46,30 +54,6 @@ def pdf_compress(pdf_name):
 
     with open(pdf_name.replace(".pdf", "_compressed.pdf"), "wb") as f:
         pdf_writer.write(f)
-
-
-def compress_pdf(path):
-
-    # compress = 4 # screen
-    compress = 2  # printer
-
-    p = CompressPDF(compress, show_info=True)
-
-    pdf_files = glob.glob(path + "*.pdf")
-
-    for pdf_file in pdf_files:
-        new_file = pdf_file.replace(".pdf", "_compressed.pdf")
-
-        pdf_file_name = pdf_file[pdf_file.rfind("\\") + 1:]
-
-        # new_file = os.path.join(compress_folder, filename)
-        try:
-            if p.compress(pdf_file, new_file):
-                print("{} done!".format(pdf_file_name))
-            else:
-                print("{} gave an error!".format(pdf_file))
-        except Exception as e:
-            print(str(e))
 
 
 def pdf_join(pdf_list, output):
@@ -137,7 +121,13 @@ def gs_compress(pdf_final):
 def process_xls_pdf(xls_file, pdf_file):
     xls_file_path = os.path.dirname(xls_file)
 
-    xls_file_pdf, cod_fatura = xls_to_pdf(xls_file)
+    if xls_file.endswith('.xlsx'):
+        xls_file_pdf, cod_fatura = xls_to_pdf(xls_file)
+    elif xls_file.endswith('.pdf'):
+        xls_file_pdf = xls_file
+    else:
+        print(f"Arquivo invalido: {xls_file}")
+        return
 
     pdf_join_files(xls_file_pdf, pdf_file)
 
@@ -157,17 +147,15 @@ def xls_to_pdf(xls_file):
     return os.path.join(xls_file_path, xls_new_pdf_name), cod_fatura
 
 
-def pdf_join_files(pdf1, pdf2):
+def pdf_join_files(pdf1: str, pdf2: str) -> str:
 
-    pdf_to_join =[]
-    pdf_to_join.append(pdf1)
-    pdf_to_join.append(pdf2)
+    pdfs_to_join = [pdf1, pdf2]
 
     pdf_path = os.path.dirname(pdf1)
     pdf_final_name = pdf2.replace(".pdf", ".joined.pdf")
     pdf_final_out = os.path.join(pdf_path, pdf_final_name)
 
-    pdf_join(pdf_to_join, pdf_final_out)
+    pdf_join(pdfs_to_join, pdf_final_out)
 
     try:
         gs_compress(pdf_final_out)
@@ -176,11 +164,15 @@ def pdf_join_files(pdf1, pdf2):
         delete_file(pdf1)
 
         delete_file(pdf_final_out)
+
     except Exception as err:
-        print(err)
+        pdf_final_out = str(err)
+
+    return pdf_final_out
 
 
 if __name__ == '__main__':
+    pandas_excel_pdf()
 
     parser = argparse.ArgumentParser()
 

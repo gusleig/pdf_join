@@ -2,6 +2,21 @@
 
 This little humble script joins an Excel file with a PDF.
 
+## Requirements
+
+1. Install Ghostscript for compressing pdfs
+
+**MacOS**
+```b
+brew install ghostscript
+```
+
+**Windows**
+https://ghostscript.com/releases/gsdnld.html
+
+
+## Usage
+
 The CLI uses one parameter:
 
 ```
